@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { addShop } from '../service/api';
+import Shop from '../../../server/schema/shop-schema.js';
 
 const initvalues ={
   name: '',
@@ -18,26 +19,29 @@ export default function AddShops() {
     
     let navigate = useNavigate();
 
-    
-  const onValueChange = (e) => {
-    const { name, value } = e.target;
 
-    if (name === 'lon' || name === 'lat') {
-      const newCoordinates = [...coordinates];
-      newCoordinates[name === 'lon' ? 0 : 1] = value;
-      setShop({ ...shop, coordinates: newCoordinates });
-    } else {
-      setShop({ ...shop, [name]: value });
+    const onValueChange = (e) => {
+      if (e.target.name === 'lon' || e.target.name === 'lat') {
+        const newCoords = [...coordinates];
+        newCoords[e.target.name === 'lon' ? 0 : 1] = e.target.value;
+        setShop({...shop, coordinates: newCoords });
+      } else {
+        setShop({...shop, [e.target.name]: e.target.value});
+      }
     }
-  };
-
-  const addShopDetails = async () => {
-    await addShop({
-      ...shop,
-      coordinates: [parseFloat(coordinates[0]), parseFloat(coordinates[1])]
-    });
-    navigate('/all');
-  };
+  
+    const addShopDetails = async() => {
+      const newShop = new Shop({
+        name,
+        location: {
+          type: 'Point',
+          coordinates: [parseFloat(coordinates[0]), parseFloat(coordinates[1])]
+        },
+        category
+      });
+      await addShop(newShop);
+      navigate('/all');
+    }
   return (
     <>
   <div>

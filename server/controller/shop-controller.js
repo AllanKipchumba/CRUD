@@ -1,58 +1,100 @@
-import Shop from '../schema/shop-schema.js'
+import Shop from "../schema/shop-schema.js";
 
-export const addShop = async (req, res) =>{
-    const shop = req.body;
-    const newShop = new Shop(shop);
-    try{
-       await newShop.save();
-       res.status(201).json(newShop);
-        
-    }
-    catch(err){
-         res.status(409).json(err);
-    }
-}
+//add shop
+export const addShop = async (req, res) => {
+  const shop = req.body;
+  const newShop = new Shop(shop);
+  try {
+    await newShop.save();
+    res.status(201).json(newShop);
+  } catch (err) {
+    res.status(409).json(err);
+  }
+};
 
-export const getShops = async (req, res) =>{
+//fetch all shops
+export const getShops = async (req, res) => {
+  try {
+    const shops = await Shop.find();
+    res.status(200).json(shops);
+  } catch (err) {
+    res.status(404).json(err);
+  }
+};
 
-    try{
-        const shops = await Shop.find();
-        res.status(200).json(shops);
-    }catch  (err){ 
-        res.status(404).json(err);
+//fetch a shop
+export const getShop = async (req, res) => {
+  try {
+    // const shop = await Shop.find({_id:req.params.id});
+    const shop = await Shop.findById(req.params.id);
+    res.status(200).json(shop);
+  } catch (err) {
+    res.status(404).json(err);
+  }
+};
 
-    }
-}
+//update shop
+export const editShop = async (req, res) => {
+  try {
+    await Shop.findOne({ _id: req.params.id })
+      .exec()
+      .then(async (shop) => {
+        if (!shop) {
+          return res.status(404).send(`Shop record not found`);
+        }
 
-export const getShop = async (req, res) =>{
+        const updates = Object.keys(req.body);
 
-    try{
-        // const shop = await Shop.find({_id:req.params.id});
-        const shop = await Shop.findById(req.params.id)
+        updates.forEach((update) => (shop[update] = req.body[update]));
+
+        await shop.save();
         res.status(200).json(shop);
-    }catch  (err){ 
-        res.status(404).json(err);
+      });
+  } catch (err) {
+    res.status(404).json(err);
+    console.log(err);
+  }
+};
 
-    }
-}
-export const editShop = async (req, res) =>{
-    let shop = req.body;        
-    const editShop = new Shop(shop)
-    try{
-     await Shop.updateone({_id:req.params.id,editShop})
-        res.status(200).json(editShop);
-    }catch  (err){ 
-        res.status(404).json(err);
+//delete shop
+export const deleteShop = async (req, res) => {
+  try {
+    await Shop.findOneAndDelete({ _id: req.params.id });
+    res.status(200).json(`Deleted`);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 
-    }
-}
-export const deleteShop = async (req, res) =>{
-   
-    try{
-     await Shop.deletone({_id:req.params.id})
-        res.status(200).json(editShop);
-    }catch  (err){ 
-        res.status(409).json(err);
+//get shops near me
+export const getShopsNearMe = async (req, res) => {
+  // Extract the current location coordinates and range(in km) from the request body
+  const { coordinates, range } = req.body;
 
+  try {
+    // Find all shops within the specified range from the current location
+    const shops = await Shop.find({
+      location: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates,
+          },
+          $maxDistance: range * 1000,
+        },
+      },
+    });
+
+    // Return the shops if there are any
+    if (shops.length > 0) {
+      res.json(shops);
+    } else {
+      // Return an error message if there are no shops within the specified range
+      res
+        .status(404)
+        .json({ message: "No shops found within the specified range." });
     }
-}
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

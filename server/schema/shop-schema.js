@@ -1,32 +1,35 @@
 import mongoose from "mongoose";
 // import autoIncrement from 'mongoose-auto-increment';
 
-const shopSchema =  mongoose.Schema({
+const shopSchema = mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
   },
   location: {
     type: {
       type: String,
-      enum: ['Point'],
-      default: 'Point'
+      enum: ["Point"],
+      default: "Point",
     },
     coordinates: {
-      
       type: [Number],
-      required: true
-    }
+      required: true,
+    },
   },
+
   category: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 // autoIncrement.initialize(mongoose.connection);
 // shopSchema.plugin(autoIncrement.plugin,'Shop')
 
-const Shop = mongoose.model('Shop', shopSchema);
+// create a geospatial index on the location field
+shopSchema.index({ location: "2dsphere" });
+
+const Shop = mongoose.model("Shop", shopSchema);
 
 export default Shop;
